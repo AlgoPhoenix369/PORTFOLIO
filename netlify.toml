@@ -1,0 +1,40 @@
+# Netlify Configuration for Portfolio
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+# Set environment variables for the build
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
+
+# Redirects for SPA (must come after build config)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API Proxy to Supabase
+[[redirects]]
+  from = "/api/*"
+  to = "https://ltpjidftzlhqsidfjevt.supabase.co/rest/v1/:splat"
+  status = 200
+  headers = {X-Forwarded-Host = "supabase"}
+
+# Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
