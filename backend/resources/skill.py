@@ -1,14 +1,13 @@
 """
-Skill API Resource
+Skills API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, Skill
-from schemas import SkillSchema, SkillListSchema
-
-skill_schema = SkillSchema()
-skill_list_schema = SkillListSchema()
+from supabase_db import (
+    get_all_skills, get_skill_by_id, create_skill,
+    update_skill, delete_skill
+)
 
 
 class SkillListResource(Resource):
@@ -21,13 +20,8 @@ class SkillListResource(Resource):
             parser.add_argument('category', type=str, location='args')
             args = parser.parse_args()
             
-            if args.get('category'):
-                skills = Skill.query.filter_by(category=args['category']).all()
-            else:
-                skills = Skill.query.order_by(Skill.category, Skill.proficiency_level.desc()).all()
-            
-            result = skill_list_schema.dump({'skills': skills})
-            return make_response(jsonify(result), 200)
+            skills = get_all_skills(args.get('category'))
+            return make_response(jsonify({'skills': skills}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
@@ -37,19 +31,17 @@ class SkillListResource(Resource):
             parser = reqparse.RequestParser()
             parser.add_argument('name', type=str, required=True, help='Skill name is required')
             parser.add_argument('category', type=str, required=True, help='Category is required')
-            parser.add_argument('proficiency_level', type=int, validate=lambda x: 1 <= x <= 100)
+            parser.add_argument('proficiency_level', type=int)
             parser.add_argument('years_of_experience', type=int)
             
             data = parser.parse_args()
+            skill = create_skill(data)
             
-            skill = Skill(**data)
-            db.session.add(skill)
-            db.session.commit()
-            
-            result = skill_schema.dump(skill)
-            return make_response(jsonify(result), 201)
+            if skill:
+                return make_response(jsonify(skill), 201)
+            else:
+                return make_response(jsonify({'error': 'Failed to create skill'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
 
 
@@ -60,22 +52,19 @@ class SkillResource(Resource):
         """Get skill by ID"""
         try:
             if id:
-                skill = Skill.query.get_or_404(id)
+                skill = get_skill_by_id(id)
+                if not skill:
+                    return make_response(jsonify({'error': 'Skill not found'}), 404)
+                return make_response(jsonify(skill), 200)
             else:
-                skills = Skill.query.all()
-                result = skill_list_schema.dump({'skills': skills})
-                return make_response(jsonify(result), 200)
-            
-            result = skill_schema.dump(skill)
-            return make_response(jsonify(result), 200)
+                skills = get_all_skills()
+                return make_response(jsonify({'skills': skills}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
         """Update skill"""
         try:
-            skill = Skill.query.get_or_404(id)
-            
             parser = reqparse.RequestParser()
             parser.add_argument('name', type=str)
             parser.add_argument('category', type=str)
@@ -83,28 +72,23 @@ class SkillResource(Resource):
             parser.add_argument('years_of_experience', type=int)
             
             data = parser.parse_args()
+            update_data = {k: v for k, v in data.items() if v is not None}
             
-            # Update fields
-            for key, value in data.items():
-                if value is not None:
-                    setattr(skill, key, value)
+            skill = update_skill(id, update_data)
             
-            db.session.commit()
-            
-            result = skill_schema.dump(skill)
-            return make_response(jsonify(result), 200)
+            if skill:
+                return make_response(jsonify(skill), 200)
+            else:
+                return make_response(jsonify({'error': 'Skill not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
         """Delete skill"""
         try:
-            skill = Skill.query.get_or_404(id)
-            db.session.delete(skill)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Skill deleted successfully'}), 200)
+            if delete_skill(id):
+                return make_response(jsonify({'message': 'Skill deleted successfully'}), 200)
+            else:
+                return make_response(jsonify({'error': 'Skill not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

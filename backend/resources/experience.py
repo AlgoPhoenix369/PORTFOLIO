@@ -1,14 +1,13 @@
 """
-Experience API Resource
+Experience API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, Experience
-from schemas import ExperienceSchema, ExperienceListSchema
-
-experience_schema = ExperienceSchema()
-experience_list_schema = ExperienceListSchema()
+from supabase_db import (
+    get_all_experiences, get_experience_by_id, create_experience,
+    update_experience, delete_experience
+)
 
 
 class ExperienceListResource(Resource):
@@ -17,9 +16,8 @@ class ExperienceListResource(Resource):
     def get(self):
         """Get all experiences"""
         try:
-            experiences = Experience.query.order_by(Experience.start_date.desc()).all()
-            result = experience_list_schema.dump({'experiences': experiences})
-            return make_response(jsonify(result), 200)
+            experiences = get_all_experiences()
+            return make_response(jsonify({'experiences': experiences}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
@@ -37,15 +35,13 @@ class ExperienceListResource(Resource):
             parser.add_argument('responsibilities', type=list, location='json', default=[])
             
             data = parser.parse_args()
+            experience = create_experience(data)
             
-            experience = Experience(**data)
-            db.session.add(experience)
-            db.session.commit()
-            
-            result = experience_schema.dump(experience)
-            return make_response(jsonify(result), 201)
+            if experience:
+                return make_response(jsonify(experience), 201)
+            else:
+                return make_response(jsonify({'error': 'Failed to create experience'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
 
 
@@ -56,22 +52,19 @@ class ExperienceResource(Resource):
         """Get experience by ID"""
         try:
             if id:
-                experience = Experience.query.get_or_404(id)
+                experience = get_experience_by_id(id)
+                if not experience:
+                    return make_response(jsonify({'error': 'Experience not found'}), 404)
+                return make_response(jsonify(experience), 200)
             else:
-                experiences = Experience.query.order_by(Experience.start_date.desc()).all()
-                result = experience_list_schema.dump({'experiences': experiences})
-                return make_response(jsonify(result), 200)
-            
-            result = experience_schema.dump(experience)
-            return make_response(jsonify(result), 200)
+                experiences = get_all_experiences()
+                return make_response(jsonify({'experiences': experiences}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
         """Update experience"""
         try:
-            experience = Experience.query.get_or_404(id)
-            
             parser = reqparse.RequestParser()
             parser.add_argument('company', type=str)
             parser.add_argument('position', type=str)
@@ -83,28 +76,23 @@ class ExperienceResource(Resource):
             parser.add_argument('responsibilities', type=list, location='json')
             
             data = parser.parse_args()
+            update_data = {k: v for k, v in data.items() if v is not None}
             
-            # Update fields
-            for key, value in data.items():
-                if value is not None:
-                    setattr(experience, key, value)
+            experience = update_experience(id, update_data)
             
-            db.session.commit()
-            
-            result = experience_schema.dump(experience)
-            return make_response(jsonify(result), 200)
+            if experience:
+                return make_response(jsonify(experience), 200)
+            else:
+                return make_response(jsonify({'error': 'Experience not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
         """Delete experience"""
         try:
-            experience = Experience.query.get_or_404(id)
-            db.session.delete(experience)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Experience deleted successfully'}), 200)
+            if delete_experience(id):
+                return make_response(jsonify({'message': 'Experience deleted successfully'}), 200)
+            else:
+                return make_response(jsonify({'error': 'Experience not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

@@ -1,6 +1,7 @@
 """
 Portfolio Backend API
-Flask RESTful API with Supabase/PostgreSQL backend
+Flask RESTful API with Supabase backend
+Production-ready for Railway/Render deployment
 """
 
 from flask import Flask, jsonify
@@ -12,7 +13,7 @@ import os
 # Load environment variables
 load_dotenv()
 
-# Import resources
+# Import all resources
 from resources.profile import ProfileResource, ProfileListResource
 from resources.experience import ExperienceResource, ExperienceListResource
 from resources.education import EducationResource, EducationListResource
@@ -22,9 +23,6 @@ from resources.certification import CertificationResource, CertificationListReso
 from resources.award import AwardResource, AwardListResource
 from resources.contact import ContactResource
 
-# Import database
-from models import db
-
 
 def create_app():
     """Application factory for creating Flask app"""
@@ -32,41 +30,33 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL', 
-        'postgresql://postgres:postgres@localhost:5432/portfolio_db'
-    )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Supabase configuration
     app.config['SUPABASE_URL'] = os.getenv('SUPABASE_URL')
     app.config['SUPABASE_KEY'] = os.getenv('SUPABASE_KEY')
     
+    # Validate Supabase configuration
+    if not app.config['SUPABASE_URL'] or not app.config['SUPABASE_KEY']:
+        app.logger.warning("Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_KEY")
+    
     # CORS configuration
     cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173').split(',')
     CORS(app, origins=cors_origins)
     
-    # Initialize extensions
-    db.init_app(app)
-    
     # Initialize Flask-RESTful
     api = Api(app)
     
-    # Register routes
+    # Register all routes
     register_routes(api)
     
     # Register error handlers
     register_error_handlers(app)
     
-    # Create tables
-    with app.app_context():
-        db.create_all()
-    
     return app
 
 
 def register_routes(api):
-    """Register API resources"""
+    """Register all API resources"""
     # Profile
     api.add_resource(ProfileListResource, '/api/profiles')
     api.add_resource(ProfileResource, '/api/profile', '/api/profile/<int:id>')
@@ -108,6 +98,7 @@ def register_error_handlers(app):
     
     @app.errorhandler(500)
     def internal_error(error):
+        app.logger.error(f'Internal error: {error}')
         return jsonify({'error': 'Internal server error'}), 500
     
     @app.errorhandler(400)
@@ -116,7 +107,34 @@ def register_error_handlers(app):
     
     @app.route('/api/health')
     def health_check():
-        return jsonify({'status': 'healthy', 'message': 'Portfolio API is running'}), 200
+        """Health check endpoint"""
+        supabase_configured = bool(os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'))
+        return jsonify({
+            'status': 'healthy',
+            'message': 'Portfolio API is running',
+            'database': 'Supabase',
+            'supabase_configured': supabase_configured,
+            'version': '1.0.0'
+        }), 200
+    
+    @app.route('/')
+    def index():
+        """API documentation endpoint"""
+        return jsonify({
+            'name': 'Portfolio API',
+            'version': '1.0.0',
+            'endpoints': {
+                'health': '/api/health',
+                'profiles': '/api/profiles',
+                'experience': '/api/experiences',
+                'education': '/api/educations',
+                'skills': '/api/skills',
+                'projects': '/api/projects',
+                'certifications': '/api/certifications',
+                'awards': '/api/awards',
+                'contact': '/api/contact'
+            }
+        }), 200
 
 
 # Create app instance
@@ -124,4 +142,6 @@ app = create_app()
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_ENV') == 'development'
+    app.run(debug=debug, host='0.0.0.0', port=port)

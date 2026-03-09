@@ -1,75 +1,58 @@
 """
-Certification API Resource
+Certifications API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, Certification
-from schemas import CertificationSchema, CertificationListSchema
-
-certification_schema = CertificationSchema()
-certification_list_schema = CertificationListSchema()
+from supabase_db import (
+    get_all_certifications, get_certification_by_id, create_certification,
+    update_certification, delete_certification
+)
 
 
 class CertificationListResource(Resource):
-    """Resource for listing and creating certifications"""
-    
     def get(self):
-        """Get all certifications"""
         try:
-            certifications = Certification.query.order_by(Certification.issue_date.desc()).all()
-            result = certification_list_schema.dump({'certifications': certifications})
-            return make_response(jsonify(result), 200)
+            certifications = get_all_certifications()
+            return make_response(jsonify({'certifications': certifications}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def post(self):
-        """Create a new certification"""
         try:
             parser = reqparse.RequestParser()
-            parser.add_argument('name', type=str, required=True, help='Certification name is required')
-            parser.add_argument('issuer', type=str, required=True, help='Issuer is required')
+            parser.add_argument('name', type=str, required=True)
+            parser.add_argument('issuer', type=str, required=True)
             parser.add_argument('issue_date', type=str)
             parser.add_argument('expiry_date', type=str)
             parser.add_argument('credential_id', type=str)
             parser.add_argument('credential_url', type=str)
             
             data = parser.parse_args()
+            cert = create_certification(data)
             
-            certification = Certification(**data)
-            db.session.add(certification)
-            db.session.commit()
-            
-            result = certification_schema.dump(certification)
-            return make_response(jsonify(result), 201)
+            if cert:
+                return make_response(jsonify(cert), 201)
+            return make_response(jsonify({'error': 'Failed to create'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
 
 
 class CertificationResource(Resource):
-    """Resource for single certification operations"""
-    
     def get(self, id=None):
-        """Get certification by ID"""
         try:
             if id:
-                certification = Certification.query.get_or_404(id)
+                cert = get_certification_by_id(id)
+                if not cert:
+                    return make_response(jsonify({'error': 'Not found'}), 404)
+                return make_response(jsonify(cert), 200)
             else:
-                certifications = Certification.query.order_by(Certification.issue_date.desc()).all()
-                result = certification_list_schema.dump({'certifications': certifications})
-                return make_response(jsonify(result), 200)
-            
-            result = certification_schema.dump(certification)
-            return make_response(jsonify(result), 200)
+                return make_response(jsonify({'certifications': get_all_certifications()}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
-        """Update certification"""
         try:
-            certification = Certification.query.get_or_404(id)
-            
             parser = reqparse.RequestParser()
             parser.add_argument('name', type=str)
             parser.add_argument('issuer', type=str)
@@ -79,28 +62,19 @@ class CertificationResource(Resource):
             parser.add_argument('credential_url', type=str)
             
             data = parser.parse_args()
+            update_data = {k: v for k, v in data.items() if v is not None}
+            cert = update_certification(id, update_data)
             
-            # Update fields
-            for key, value in data.items():
-                if value is not None:
-                    setattr(certification, key, value)
-            
-            db.session.commit()
-            
-            result = certification_schema.dump(certification)
-            return make_response(jsonify(result), 200)
+            if cert:
+                return make_response(jsonify(cert), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
-        """Delete certification"""
         try:
-            certification = Certification.query.get_or_404(id)
-            db.session.delete(certification)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Certification deleted successfully'}), 200)
+            if delete_certification(id):
+                return make_response(jsonify({'message': 'Deleted'}), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

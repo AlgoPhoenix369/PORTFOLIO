@@ -1,14 +1,13 @@
 """
-Profile API Resource
+Profile API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, Profile
-from schemas import ProfileSchema, ProfileListSchema
-
-profile_schema = ProfileSchema()
-profile_list_schema = ProfileListSchema()
+from supabase_db import (
+    get_all_profiles, get_profile_by_id, create_profile, 
+    update_profile, delete_profile
+)
 
 
 class ProfileListResource(Resource):
@@ -17,9 +16,8 @@ class ProfileListResource(Resource):
     def get(self):
         """Get all profiles"""
         try:
-            profiles = Profile.query.all()
-            result = profile_list_schema.dump({'profiles': profiles})
-            return make_response(jsonify(result), 200)
+            profiles = get_all_profiles()
+            return make_response(jsonify({'profiles': profiles}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
@@ -39,19 +37,18 @@ class ProfileListResource(Resource):
             
             data = parser.parse_args()
             
-            # Validate email uniqueness
-            existing = Profile.query.filter_by(email=data['email']).first()
-            if existing:
+            # Check for duplicate email
+            existing = get_all_profiles()
+            if any(p['email'] == data['email'] for p in existing):
                 return make_response(jsonify({'error': 'Email already exists'}), 400)
             
-            profile = Profile(**data)
-            db.session.add(profile)
-            db.session.commit()
+            profile = create_profile(data)
             
-            result = profile_schema.dump(profile)
-            return make_response(jsonify(result), 201)
+            if profile:
+                return make_response(jsonify(profile), 201)
+            else:
+                return make_response(jsonify({'error': 'Failed to create profile'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
 
 
@@ -62,23 +59,21 @@ class ProfileResource(Resource):
         """Get profile by ID or get main profile"""
         try:
             if id:
-                profile = Profile.query.get_or_404(id)
+                profile = get_profile_by_id(id)
             else:
-                profile = Profile.query.first()
+                profiles = get_all_profiles()
+                profile = profiles[0] if profiles else None
             
             if not profile:
                 return make_response(jsonify({'error': 'Profile not found'}), 404)
             
-            result = profile_schema.dump(profile)
-            return make_response(jsonify(result), 200)
+            return make_response(jsonify(profile), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
         """Update profile"""
         try:
-            profile = Profile.query.get_or_404(id)
-            
             parser = reqparse.RequestParser()
             parser.add_argument('name', type=str)
             parser.add_argument('title', type=str)
@@ -91,28 +86,24 @@ class ProfileResource(Resource):
             parser.add_argument('portfolio_url', type=str)
             
             data = parser.parse_args()
+            # Remove None values
+            update_data = {k: v for k, v in data.items() if v is not None}
             
-            # Update fields
-            for key, value in data.items():
-                if value is not None:
-                    setattr(profile, key, value)
+            profile = update_profile(id, update_data)
             
-            db.session.commit()
-            
-            result = profile_schema.dump(profile)
-            return make_response(jsonify(result), 200)
+            if profile:
+                return make_response(jsonify(profile), 200)
+            else:
+                return make_response(jsonify({'error': 'Profile not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
         """Delete profile"""
         try:
-            profile = Profile.query.get_or_404(id)
-            db.session.delete(profile)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Profile deleted successfully'}), 200)
+            if delete_profile(id):
+                return make_response(jsonify({'message': 'Profile deleted successfully'}), 200)
+            else:
+                return make_response(jsonify({'error': 'Profile not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

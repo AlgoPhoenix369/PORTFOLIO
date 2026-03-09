@@ -1,34 +1,28 @@
 """
-Education API Resource
+Education API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, Education
-from schemas import EducationSchema, EducationListSchema
-
-education_schema = EducationSchema()
-education_list_schema = EducationListSchema()
+from supabase_db import (
+    get_all_educations, get_education_by_id, create_education,
+    update_education, delete_education
+)
 
 
 class EducationListResource(Resource):
-    """Resource for listing and creating educations"""
-    
     def get(self):
-        """Get all educations"""
         try:
-            educations = Education.query.order_by(Education.end_date.desc()).all()
-            result = education_list_schema.dump({'educations': educations})
-            return make_response(jsonify(result), 200)
+            educations = get_all_educations()
+            return make_response(jsonify({'educations': educations}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def post(self):
-        """Create a new education"""
         try:
             parser = reqparse.RequestParser()
-            parser.add_argument('institution', type=str, required=True, help='Institution is required')
-            parser.add_argument('degree', type=str, required=True, help='Degree is required')
+            parser.add_argument('institution', type=str, required=True)
+            parser.add_argument('degree', type=str, required=True)
             parser.add_argument('field_of_study', type=str)
             parser.add_argument('location', type=str)
             parser.add_argument('start_date', type=str)
@@ -36,41 +30,30 @@ class EducationListResource(Resource):
             parser.add_argument('description', type=str)
             
             data = parser.parse_args()
+            education = create_education(data)
             
-            education = Education(**data)
-            db.session.add(education)
-            db.session.commit()
-            
-            result = education_schema.dump(education)
-            return make_response(jsonify(result), 201)
+            if education:
+                return make_response(jsonify(education), 201)
+            return make_response(jsonify({'error': 'Failed to create'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
 
 
 class EducationResource(Resource):
-    """Resource for single education operations"""
-    
     def get(self, id=None):
-        """Get education by ID"""
         try:
             if id:
-                education = Education.query.get_or_404(id)
+                education = get_education_by_id(id)
+                if not education:
+                    return make_response(jsonify({'error': 'Not found'}), 404)
+                return make_response(jsonify(education), 200)
             else:
-                educations = Education.query.order_by(Education.end_date.desc()).all()
-                result = education_list_schema.dump({'educations': educations})
-                return make_response(jsonify(result), 200)
-            
-            result = education_schema.dump(education)
-            return make_response(jsonify(result), 200)
+                return make_response(jsonify({'educations': get_all_educations()}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
-        """Update education"""
         try:
-            education = Education.query.get_or_404(id)
-            
             parser = reqparse.RequestParser()
             parser.add_argument('institution', type=str)
             parser.add_argument('degree', type=str)
@@ -81,28 +64,19 @@ class EducationResource(Resource):
             parser.add_argument('description', type=str)
             
             data = parser.parse_args()
+            update_data = {k: v for k, v in data.items() if v is not None}
+            education = update_education(id, update_data)
             
-            # Update fields
-            for key, value in data.items():
-                if value is not None:
-                    setattr(education, key, value)
-            
-            db.session.commit()
-            
-            result = education_schema.dump(education)
-            return make_response(jsonify(result), 200)
+            if education:
+                return make_response(jsonify(education), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
-        """Delete education"""
         try:
-            education = Education.query.get_or_404(id)
-            db.session.delete(education)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Education deleted successfully'}), 200)
+            if delete_education(id):
+                return make_response(jsonify({'message': 'Deleted'}), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

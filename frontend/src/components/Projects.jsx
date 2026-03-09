@@ -1,6 +1,11 @@
-import { ExternalLink, Github, Clock, Award, Code, ArrowUpRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Github, Clock, Code, ArrowUpRight, Filter, Search } from 'lucide-react';
 
 const Projects = () => {
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hoveredProject, setHoveredProject] = useState(null);
+
   const projects = [
     {
       title: 'Multi-Lingual Sentiment Analysis',
@@ -9,6 +14,7 @@ const Projects = () => {
       duration: '6 months',
       role: 'Lead Developer',
       gradient: 'from-blue-500 to-cyan-500',
+      category: 'ml',
     },
     {
       title: 'Automated Data Annotation Pipeline',
@@ -17,6 +23,7 @@ const Projects = () => {
       duration: '4 months',
       role: 'ML Engineer',
       gradient: 'from-purple-500 to-pink-500',
+      category: 'ml',
     },
     {
       title: 'LLM Evaluation Framework',
@@ -24,42 +31,127 @@ const Projects = () => {
       technologies: ['Python', 'Transformers', 'Weights & Biases'],
       duration: '3 months',
       role: 'Research Engineer',
-      gradient: 'from-green-500 to-emerald-500',
+      gradient: 'from-emerald-500 to-teal-500',
+      category: 'research',
+    },
+    {
+      title: 'NLP Text Classification System',
+      description: 'Advanced text classification system using BERT and custom transformers for multi-label classification tasks.',
+      technologies: ['Python', 'BERT', 'PyTorch', 'Hugging Face'],
+      duration: '5 months',
+      role: 'NLP Engineer',
+      gradient: 'from-amber-500 to-orange-500',
+      category: 'nlp',
+    },
+    {
+      title: 'Computer Vision Quality Assurance',
+      description: 'Automated quality assurance system using computer vision for detecting defects in manufacturing processes.',
+      technologies: ['Python', 'OpenCV', 'TensorFlow', 'Docker'],
+      duration: '4 months',
+      role: 'CV Engineer',
+      gradient: 'from-indigo-500 to-purple-500',
+      category: 'cv',
     },
   ];
 
-  const awards = [
-    { title: 'Outstanding Contributor Award', org: 'TELUS International', year: '2025', icon: '🏆' },
-    { title: 'Best Research Paper', org: 'ACL Conference', year: '2023', icon: '📄' },
-    { title: 'Academic Excellence Scholarship', org: 'University of Edinburgh', year: '2018-2024', icon: '🎓' },
+  const filters = [
+    { id: 'all', label: 'All Projects', icon: <Filter size={18} /> },
+    { id: 'ml', label: 'Machine Learning', icon: <Code size={18} /> },
+    { id: 'nlp', label: 'NLP', icon: <Code size={18} /> },
+    { id: 'cv', label: 'Computer Vision', icon: <Code size={18} /> },
+    { id: 'research', label: 'Research', icon: <Code size={18} /> },
   ];
 
+  // Filter projects
+  const filteredProjects = projects.filter(project => {
+    const matchesCategory = activeFilter === 'all' || project.category === activeFilter;
+    const matchesSearch = searchTerm === '' || 
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.technologies.some(tech => tech.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
   return (
-    <section id="projects" className="section-padding relative overflow-hidden bg-slate-900/50">
+    <section id="projects" className="section-padding relative overflow-hidden bg-gradient-to-br from-slate-900/50 via-purple-900/20 to-slate-900/50">
       {/* Background */}
-      <div className="absolute inset-0 grid-pattern opacity-20"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-pink-500/10 rounded-full filter blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full filter blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
 
       <div className="container-custom relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-16">
           <div className="inline-flex items-center space-x-2 glass px-4 py-2 rounded-full mb-6">
-            <Award size={16} className="text-pink-400" />
+            <Code size={16} className="text-purple-400" />
             <span className="text-sm font-medium text-gray-300">Portfolio</span>
           </div>
           <h2 className="text-5xl md:text-6xl font-black mb-6">
-            <span className="gradient-text">Projects & Awards</span>
+            <span className="gradient-text">Featured Projects</span>
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Showcasing impactful projects and recognition
+            Showcasing impactful projects and innovations
+          </p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="max-w-4xl mx-auto mb-12">
+          {/* Search Bar */}
+          <div className="relative mb-8">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search size={20} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search projects by name, technology, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 glass rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border border-white/10"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`px-5 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
+                  activeFilter === filter.id
+                    ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50 scale-105'
+                    : 'glass text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {filter.icon}
+                <span>{filter.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="text-center mb-8">
+          <p className="text-gray-400">
+            Showing <span className="text-white font-bold">{filteredProjects.length}</span> of{' '}
+            <span className="text-white font-bold">{projects.length}</span> projects
           </p>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-          {projects.map((project, index) => (
-            <div key={index} className="group relative">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredProjects.map((project, index) => (
+            <div 
+              key={index} 
+              className="group relative"
+              onMouseEnter={() => setHoveredProject(index)}
+              onMouseLeave={() => setHoveredProject(null)}
+            >
               {/* Glow Border */}
               <div className={`absolute -inset-1 bg-gradient-to-r ${project.gradient} rounded-3xl blur opacity-25 group-hover:opacity-75 transition-opacity duration-500`}></div>
               
@@ -71,6 +163,25 @@ const Projects = () => {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Code size={64} className="text-white/50" />
                   </div>
+                  
+                  {/* Googly Eyes - Appear on Hover */}
+                  {hoveredProject === index && (
+                    <>
+                      {/* Left Eye */}
+                      <div className="absolute top-12 left-10 w-16 h-16 bg-white rounded-full shadow-lg animate-bounce-in flex items-center justify-center">
+                        <div className="w-8 h-8 bg-black rounded-full relative">
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                      </div>
+                      {/* Right Eye */}
+                      <div className="absolute top-12 right-10 w-16 h-16 bg-white rounded-full shadow-lg animate-bounce-in flex items-center justify-center" style={{ animationDelay: '0.1s' }}>
+                        <div className="w-8 h-8 bg-black rounded-full relative">
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
                   {/* Animated Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
                 </div>
@@ -88,7 +199,7 @@ const Projects = () => {
                       <span>{project.duration}</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Award size={14} />
+                      <Code size={14} />
                       <span>{project.role}</span>
                     </div>
                   </div>
@@ -124,23 +235,22 @@ const Projects = () => {
           ))}
         </div>
 
-        {/* Awards */}
-        <div>
-          <h3 className="text-3xl font-bold mb-8 text-center text-white">Awards & Recognition</h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            {awards.map((award, index) => (
-              <div key={index} className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500/50 to-orange-500/50 rounded-2xl blur opacity-25 group-hover:opacity-75 transition-opacity duration-500"></div>
-                <div className="relative glass-card p-8 rounded-2xl card-hover text-center">
-                  <div className="text-5xl mb-4">{award.icon}</div>
-                  <h4 className="text-lg font-bold text-white mb-2">{award.title}</h4>
-                  <p className="text-purple-400 font-medium mb-2">{award.org}</p>
-                  <p className="text-gray-500 text-sm">{award.year}</p>
-                </div>
-              </div>
-            ))}
+        {/* No Results */}
+        {filteredProjects.length === 0 && (
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-20 h-20 glass rounded-full mb-6">
+              <Search size={40} className="text-gray-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">No projects found</h3>
+            <p className="text-gray-400 mb-6">Try adjusting your search or filter criteria</p>
+            <button
+              onClick={() => { setActiveFilter('all'); setSearchTerm(''); }}
+              className="btn-primary-custom"
+            >
+              Clear Filters
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, Github, Linkedin, Mail } from 'lucide-react';
+import { Menu, X, Github, Linkedin, Mail, Sun, Moon } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -17,13 +17,14 @@ const Navbar = () => {
     { name: 'Experience', href: '#experience' },
     { name: 'Skills', href: '#skills' },
     { name: 'Projects', href: '#projects' },
+    { name: 'Education', href: '#education' },
     { name: 'Contact', href: '#contact' },
   ];
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
       isScrolled 
-        ? 'glass bg-slate-900/90 backdrop-blur-xl py-4 shadow-2xl shadow-blue-500/20' 
+        ? 'glass bg-slate-900/90 backdrop-blur-xl py-4 shadow-2xl shadow-purple-500/20' 
         : 'bg-transparent py-6'
     }`}>
       <div className="container-custom">
@@ -51,7 +52,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Social Links */}
+          {/* Social Links & Dark Mode Toggle */}
           <div className="hidden md:flex items-center space-x-3">
             {[
               { href: 'https://github.com/PhoenixAlgo369', icon: <Github size={20} /> },
@@ -68,6 +69,15 @@ const Navbar = () => {
                 {social.icon}
               </a>
             ))}
+            
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-3 glass rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -93,12 +103,20 @@ const Navbar = () => {
                   {link.name}
                 </a>
               ))}
-              <div className="flex items-center space-x-3 pt-4 border-t border-white/10">
-                {[Github, Linkedin, Mail].map((Icon, index) => (
-                  <a key={index} href="#" className="p-3 glass rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300">
-                    <Icon size={20} />
-                  </a>
-                ))}
+              <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <div className="flex items-center space-x-3">
+                  {[Github, Linkedin, Mail].map((Icon, index) => (
+                    <a key={index} href="#" className="p-3 glass rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300">
+                      <Icon size={20} />
+                    </a>
+                  ))}
+                </div>
+                <button
+                  onClick={toggleDarkMode}
+                  className="p-3 glass rounded-xl text-gray-400 hover:text-white transition-all duration-300"
+                >
+                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
               </div>
             </div>
           </div>

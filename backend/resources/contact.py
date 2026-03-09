@@ -1,24 +1,21 @@
 """
-Contact API Resource
+Contact API Resource - Using Supabase
 """
 
 from flask_restful import Resource, reqparse
 from flask import jsonify, make_response
-from models import db, ContactMessage
-from schemas import ContactMessageSchema
-
-contact_schema = ContactMessageSchema()
+from supabase_db import (
+    get_all_messages, get_message_by_id, create_message,
+    update_message, delete_message
+)
 
 
 class ContactResource(Resource):
-    """Resource for contact form submissions"""
-    
     def get(self):
-        """Get all contact messages (admin only)"""
+        """Get all contact messages (admin)"""
         try:
-            messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
-            result = {'messages': [contact_schema.dump(msg) for msg in messages]}
-            return make_response(jsonify(result), 200)
+            messages = get_all_messages()
+            return make_response(jsonify({'messages': messages}), 200)
         except Exception as e:
             return make_response(jsonify({'error': str(e)}), 500)
     
@@ -32,41 +29,32 @@ class ContactResource(Resource):
             parser.add_argument('message', type=str, required=True, help='Message is required')
             
             data = parser.parse_args()
+            message = create_message(data)
             
-            contact_message = ContactMessage(**data)
-            db.session.add(contact_message)
-            db.session.commit()
-            
-            result = contact_schema.dump(contact_message)
-            return make_response(jsonify({
-                'message': 'Contact message sent successfully',
-                'data': result
-            }), 201)
+            if message:
+                return make_response(jsonify({
+                    'message': 'Contact message sent successfully',
+                    'data': message
+                }), 201)
+            return make_response(jsonify({'error': 'Failed to send message'}), 500)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def put(self, id):
-        """Mark a message as read"""
+        """Mark message as read"""
         try:
-            message = ContactMessage.query.get_or_404(id)
-            message.is_read = True
-            db.session.commit()
-            
-            result = contact_schema.dump(message)
-            return make_response(jsonify(result), 200)
+            message = update_message(id, {'is_read': True})
+            if message:
+                return make_response(jsonify(message), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)
     
     def delete(self, id):
-        """Delete a contact message"""
+        """Delete a message"""
         try:
-            message = ContactMessage.query.get_or_404(id)
-            db.session.delete(message)
-            db.session.commit()
-            
-            return make_response(jsonify({'message': 'Message deleted successfully'}), 200)
+            if delete_message(id):
+                return make_response(jsonify({'message': 'Deleted'}), 200)
+            return make_response(jsonify({'error': 'Not found'}), 404)
         except Exception as e:
-            db.session.rollback()
             return make_response(jsonify({'error': str(e)}), 500)

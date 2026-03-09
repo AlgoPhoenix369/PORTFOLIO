@@ -1,6 +1,13 @@
+import { useState, useEffect } from 'react';
 import { ArrowDown, Github, Linkedin, Mail, Sparkles } from 'lucide-react';
 
 const Hero = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   return (
     <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
       {/* Animated Background */}
@@ -29,40 +36,52 @@ const Hero = () => {
       </div>
 
       <div className="container-custom relative z-10 text-center px-6">
-        {/* Verified Badge */}
-        <div className="animate-fade-in mb-8 inline-flex items-center space-x-2 glass px-6 py-3 rounded-full">
-          <Sparkles size={18} className="text-yellow-400" />
+        {/* Verified Badge - Slide from Top */}
+        <div className={`mb-8 inline-flex items-center space-x-2 glass px-6 py-3 rounded-full transition-all duration-1000 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'
+        }`}>
+          <Sparkles size={18} className="text-yellow-400 animate-pulse" />
           <span className="text-sm font-medium text-gray-300">Available for opportunities</span>
         </div>
 
-        {/* Name with Epic Gradient */}
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-6 animate-slide-up tracking-tight">
+        {/* Name with Epic Gradient - Zoom In */}
+        <h1 className={`text-6xl md:text-8xl lg:text-9xl font-black mb-6 transition-all duration-1000 delay-200 ${
+          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+        }`}>
           <span className="gradient-text block">Babajide Salami</span>
         </h1>
 
-        {/* Title with Glow */}
-        <div className="relative inline-block mb-8 animate-slide-up animation-delay-200">
+        {/* Title with Glow - Slide from Bottom */}
+        <div className={`relative inline-block mb-8 transition-all duration-1000 delay-400 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+        }`}>
           <p className="text-2xl md:text-3xl lg:text-4xl text-gray-300 font-light">
             AI Training Specialist <span className="text-white/40">&</span> Software Engineer
           </p>
           <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-2xl -z-10"></div>
         </div>
 
-        {/* Location */}
-        <p className="text-gray-400 mb-10 animate-slide-up animation-delay-400 flex items-center justify-center space-x-2">
+        {/* Location - Fade In */}
+        <p className={`text-gray-400 mb-10 transition-all duration-1000 delay-600 flex items-center justify-center space-x-2 ${
+          isVisible ? 'opacity-100' : 'opacity-0'
+        }`}>
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
           <span>Croydon, England, United Kingdom</span>
         </p>
 
-        {/* Summary */}
-        <p className="text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-slide-up animation-delay-600">
+        {/* Summary - Slide Up */}
+        <p className={`text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed transition-all duration-1000 delay-800 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+        }`}>
           Pioneering the future of AI through <span className="text-blue-400 font-semibold">RLHF</span>,{' '}
           <span className="text-purple-400 font-semibold">LLM evaluation</span>, and{' '}
           <span className="text-pink-400 font-semibold">intelligent data annotation</span> for next-generation AI systems.
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16 animate-slide-up animation-delay-600">
+        {/* CTA Buttons - Bounce In */}
+        <div className={`flex flex-col sm:flex-row items-center justify-center gap-6 mb-16 transition-all duration-1000 delay-1000 ${
+          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+        }`}>
           <a href="#projects" className="btn-primary-custom group">
             <span className="relative z-10 flex items-center">
               View My Work
@@ -77,8 +96,10 @@ const Hero = () => {
           </a>
         </div>
 
-        {/* Social Links with Glow */}
-        <div className="flex items-center justify-center space-x-6 animate-slide-up animation-delay-600">
+        {/* Social Links with Glow - Slide from Sides */}
+        <div className={`flex items-center justify-center space-x-6 transition-all duration-1000 delay-1200 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+        }`}>
           {[
             { href: 'https://github.com/PhoenixAlgo369', icon: <Github size={26} />, label: 'GitHub' },
             { href: 'https://linkedin.com/in/babajide-salami-', icon: <Linkedin size={26} />, label: 'LinkedIn' },
@@ -89,7 +110,10 @@ const Hero = () => {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex flex-col items-center space-y-2"
+              className={`group flex flex-col items-center space-y-2 transition-all duration-700 ${
+                isVisible ? 'opacity-100 translate-x-0' : `opacity-0 ${index < 2 ? '-translate-x-20' : 'translate-x-20'}`
+              }`}
+              style={{ transitionDelay: `${1400 + (index * 200)}ms` }}
             >
               <div className="p-4 glass rounded-2xl text-gray-400 group-hover:text-white group-hover:glow transition-all duration-300 group-hover:scale-110">
                 {social.icon}

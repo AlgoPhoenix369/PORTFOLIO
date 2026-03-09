@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, MapPin, Phone, Send, CheckCircle, AlertCircle, MessageSquare, Sparkles } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle, AlertCircle, MessageSquare, Sparkles } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -16,15 +16,12 @@ const Contact = () => {
   const contactInfo = [
     { icon: <Mail size={24} />, label: 'Email', value: 'babajide.salami@email.com', gradient: 'from-blue-500 to-cyan-500' },
     { icon: <MapPin size={24} />, label: 'Location', value: 'Croydon, England, UK', gradient: 'from-purple-500 to-pink-500' },
-    { icon: <Phone size={24} />, label: 'Phone', value: '+44 7XXX XXXXXX', gradient: 'from-green-500 to-emerald-500' },
   ];
 
   return (
-    <section id="contact" className="section-padding relative overflow-hidden bg-slate-900/50">
+    <section id="contact" className="section-padding relative overflow-hidden bg-gradient-to-br from-slate-900/50 via-blue-900/20 to-slate-900/50">
       {/* Background */}
-      <div className="absolute inset-0 grid-pattern opacity-20"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full filter blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
 
       <div className="container-custom relative z-10">
         {/* Section Header */}
