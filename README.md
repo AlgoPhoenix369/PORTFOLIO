@@ -153,14 +153,19 @@ cp .env.example .env
 npm run dev
 ```
 
-### 4. Supabase Setup (Optional)
+### 4. Supabase Setup (Completed ✅)
 
-If using Supabase instead of local PostgreSQL:
+Your Supabase project is configured:
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the contents of `backend/database_schema.sql`
-3. Get your project URL and anon key from Settings > API
-4. Update environment files with your Supabase credentials
+- **Project URL**: `https://ltpjidftzlhqsidfjevt.supabase.co`
+- **Database Schema**: Ready to deploy (see `backend/database_schema.sql`)
+
+To initialize your database:
+
+1. Go to **SQL Editor** in your Supabase dashboard
+2. Click **New query**
+3. Copy and paste the contents of `backend/database_schema.sql`
+4. Click **Run** to create all tables and sample data
 
 ## 🧪 Running Tests
 
